@@ -183,8 +183,7 @@ def retrieve(ctx, username, password, output):
 
 
 @click.command("adduser")
-@click.option("--username", prompt="Enter username> ", required=True)
-@click.option("--password", prompt="Enter password> ", hide_input=True, required=True)
+@click.argument("username")
 @click.pass_context
 def add_user(ctx, username):
     api: Api = ctx.obj["api"]

@@ -29,10 +29,11 @@ async fn main() {
     // pretty_env_logger::init();
 
     let db_user = env::var("DB_USER").unwrap();
+    let db_password = env::var("DB_PASSWORD").unwrap_or_default();
     let db_host = env::var("DB_HOST").unwrap();
     let db_port = env::var("DB_PORT").unwrap();
     let db_name = env::var("DB_NAME").unwrap();
-    let db_url = format!("postgres://{db_user}@{db_host}:{db_port}/{db_name}");
+    let db_url = format!("postgres://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}");
 
     // initialize tracing
     tracing_subscriber::registry()
