@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -x
 set -eo pipefail
@@ -13,7 +13,7 @@ export DATABASE_URL="postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/
 if ! [ -x "$(command -v sqlx)" ]; then
     echo >&2 "Error: sqlx is not installed."
     echo "Trying to sqlx-cli install using cargo..."
-    cargo install sqlx-cli --features postgres,rustls
+    cargo install sqlx-cli --no-default-features --features postgres,rustls
 fi
 
 until psql -h "${DB_HOST}" -U "${DB_USER}" -p "${DB_PORT}" -d "${DB_USER}" -c '\q'; do
