@@ -61,7 +61,7 @@ async fn main() {
     if find_user(&state.pool, "admin").await.is_err() {
         
         let password = fs::read_to_string(root_path.join("PASSWORD")).expect("Could not open PASSWORD file.");
-        log::info!("setting admin password {} FIXME REMOVE", &password);
+        log::info!("setting admin password");
         let admin = User {
             email: "admin".to_owned(),
             password: password,

@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 
 import csv
+import json
+import sys
 from getpass import getpass
 from pathlib import Path
-import sys
 from typing import Dict, Optional
-import json
 
 import click
 import requests
-import urllib
-from attrs import define
-
 import urllib3
+from attrs import define
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)  # type: ignore
 
