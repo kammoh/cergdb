@@ -101,7 +101,7 @@ def cli(ctx, server, port, tls):
 
 
 @click.command()
-@click.option("--username", prompt="Enter username> ", help="user name")
+@click.option("--username", prompt="Enter username", help="user name")
 @click.option("--password", help="password", default=None)
 @click.option("--submission-id", required=True)
 @click.option("--submission-name", required=True)
@@ -123,7 +123,7 @@ def submit(
 ):
     api: Api = ctx.obj["api"]
     if not password:
-        password = getpass("Enter admin password> ")
+        password = getpass("Enter admin password")
     api.login(username, password=password)
 
     metadata = {}
@@ -160,8 +160,8 @@ def submit(
 
 
 @click.command()
-@click.option("--username", prompt="Enter username> ", required=True)
-@click.option("--password", prompt="Enter password> ", hide_input=True, required=True)
+@click.option("--username", prompt="Enter username", required=True)
+@click.option("--password", prompt="Enter password", hide_input=True, required=True)
 @click.option("--output", type=Path, default="all_data.json")
 @click.pass_context
 def retrieve(ctx, username, password, output):
@@ -170,7 +170,7 @@ def retrieve(ctx, username, password, output):
     api.login(username, password)
 
     params = {}
-    params = dict(filter="id = 'asco'", limit=10000, offset=0)
+    # params = dict(filter="id = 'asco'", limit=10000, offset=0)
 
     success, r = api.get("retrieve", params=params)
 
@@ -184,14 +184,14 @@ def retrieve(ctx, username, password, output):
 
 @click.command("adduser")
 @click.argument("username")
+@click.option("--admin-password", prompt="Enter admin password", hide_input=True, required=True)
 @click.pass_context
-def add_user(ctx, username):
+def add_user(ctx, username, admin_password):
     api: Api = ctx.obj["api"]
 
-    admin_pass = getpass("Enter admin password> ")
-    api.login("admin", password=admin_pass)
+    api.login(email="admin", password=admin_password)
 
-    user_pass = getpass(f"Enter password for new user {username}> ")
+    user_pass = getpass(f"Enter password for new user {username}: ")
 
     success, r = api.add_user(username, user_pass)
 
