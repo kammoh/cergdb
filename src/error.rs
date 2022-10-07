@@ -12,6 +12,7 @@ pub enum AppError {
     UserAlreadyExits,
     ResultsAlreadyExits,
     ResultsNotFound,
+    AuthenticationError(String),
     SqlxError(sqlx::Error),
 }
 
@@ -36,6 +37,10 @@ impl IntoResponse for AppError {
             ),
             Self::WrongCredential => (StatusCode::UNAUTHORIZED, "wrong credentials".into()),
             Self::UserDoesNotExist => (StatusCode::UNAUTHORIZED, "User does not exist".into()),
+            Self::AuthenticationError(msg) => (
+                StatusCode::UNAUTHORIZED,
+                format!("Authentication error: {msg}"),
+            ),
             Self::UserAlreadyExits => (StatusCode::BAD_REQUEST, "User already exists".into()),
             Self::ResultsNotFound => (StatusCode::BAD_REQUEST, "Results not found".into()),
             Self::ResultsAlreadyExits => (

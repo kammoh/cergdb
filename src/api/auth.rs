@@ -84,14 +84,15 @@ pub async fn login(
     let user = find_user(&state.pool, &credentials.email).await?;
 
     let verified = argonautica::Verifier::new()
-        .with_secret_key(state.secret.expose_secret())
-        .with_password(&credentials.password)
         .with_hash(&user.password)
-        .verify();
+        .with_password(&credentials.password)
+        .with_secret_key(state.secret.expose_secret())
+        .verify()
+        .map_err(|_| AppError::AuthenticationError(String::from("Could not verify password")))?;
 
-    log::info!("[login] verified: {verified:?}");
+    log::info!("[login] verified: {verified}");
 
-    if verified.unwrap_or(false) {
+    if verified {
         let claims = Claims {
             email: credentials.email.to_owned(),
             exp: get_timestamp_8_hours_from_now(),
