@@ -40,12 +40,13 @@ pub async fn insert_new_user(
     transaction: &mut Transaction<'_, Postgres>,
     new_user: &User,
 ) -> Result<String, AppError> {
-    let mut hasher = argonautica::Hasher::default();
-    let password_hash = hasher
-        .with_password(&new_user.password)
-        .with_secret_key(state.secret.expose_secret())
-        .hash()
-        .expect("failed to hash the password");
+    let argon2_config = argon2::Config::default();
+    let password_hash = argon2::hash_encoded(
+        new_user.password.as_bytes(),
+        state.secret.expose_secret().as_bytes(),
+        &argon2_config,
+    )
+    .unwrap();
 
     match sqlx::query!(
         r#"
@@ -83,16 +84,11 @@ pub async fn login(
 
     let user = find_user(&state.pool, &credentials.email).await?;
 
-    let verified = argonautica::Verifier::new()
-        .with_hash(&user.password)
-        .with_password(&credentials.password)
-        .with_secret_key(state.secret.expose_secret())
-        .verify()
-        .map_err(|_| AppError::AuthenticationError(String::from("Could not verify password")))?;
+    let matches = argon2::verify_encoded(&user.password, &credentials.password.as_bytes()).unwrap();
 
-    log::info!("[login] user: {} verified: {verified}", &credentials.email);
+    log::info!("[login] user: {} matches: {matches}", &credentials.email);
 
-    if verified {
+    if matches {
         let claims = Claims {
             username: user.email,
             is_admin: user.is_admin,
