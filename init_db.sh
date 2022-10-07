@@ -23,8 +23,7 @@ done
 
 sqlx database create
 
-# sqlx migrate revert
-sqlx migrate run
-cargo sqlx prepare --database-url ${DATABASE_URL}
+# sqlx migrate run
+# cargo sqlx prepare --database-url ${DATABASE_URL}
 
 >&2 echo "Database is now ready!"

@@ -56,3 +56,8 @@ $ ./init_db.sh
 ```
 $ ./backup_db.sh
 ```
+
+## Delete and Reset the Database
+```
+$ sqlx database reset
+```

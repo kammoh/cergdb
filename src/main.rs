@@ -10,7 +10,7 @@ use cergdb::{
         auth::{find_user, insert_new_user},
     },
     models::auth::User,
-    AppState,
+    AppState, MIGRATOR,
 };
 use secrecy::Secret;
 use sqlx::postgres::PgPoolOptions;
@@ -51,18 +51,17 @@ async fn main() {
         .await
         .expect("unable to connect to database");
 
-    let secret = Secret::from(
-        env::var("SECRET").unwrap_or(
-            fs::read_to_string(root_path.join("SECRET")).expect("Could not open SECRET file.")
-        )
-    );
+    let secret = Secret::from(env::var("SECRET").unwrap_or(
+        fs::read_to_string(root_path.join("SECRET")).expect("Could not open SECRET file."),
+    ));
 
-    // MIGRATOR.run(&pool).await.unwrap();
+    MIGRATOR.run(&pool).await.unwrap();
+
     let state = Arc::new(AppState { pool, secret });
 
     if find_user(&state.pool, "admin").await.is_err() {
         let password = env::var("ADMIN_PASSWORD").unwrap_or(
-            fs::read_to_string(root_path.join("PASSWORD")).expect("Could not open PASSWORD file.")
+            fs::read_to_string(root_path.join("PASSWORD")).expect("Could not open PASSWORD file."),
         );
         log::info!("setting admin password");
         let admin = User {
@@ -85,8 +84,8 @@ async fn main() {
         .route("/register", post(api::auth::register))
         //only logged-in user can access this route
         .route("/user_profile", get(api::users::user_profile))
-        .route("/submit", post(api::results::submit))
-        .route("/retrieve", get(api::results::retrieve))
+        .route("/submit", post(api::submit::submit))
+        .route("/retrieve", get(api::retrieve::retrieve))
         .layer(cors)
         .layer(Extension(state));
 

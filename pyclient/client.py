@@ -12,8 +12,6 @@ import requests
 import urllib3
 from attrs import define
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)  # type: ignore
-
 
 @define
 class Api:
@@ -22,12 +20,14 @@ class Api:
     api_root: str = ""
     tls: bool = False
     headers: Dict[str, str] = {}
-    verify: bool = False
+    verify: bool = True
 
     def __attrs_post_init__(self) -> None:
         self.headers: Dict[str, str] = {
             "accept": "application/json",
         }
+        if not self.verify:
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)  # type: ignore
 
     @property
     def server_url(self) -> str:
@@ -92,10 +92,11 @@ class Api:
 @click.pass_context
 @click.option("--server", type=str, default="127.0.0.1")
 @click.option("--port", type=int, default=4000)
-@click.option("--tls", default=True)
-def cli(ctx, server, port, tls):
+@click.option("--tls/--no-tls", default=True)
+@click.option("--tls-verify/--no-tls-verify", default=True, help="Verify TLS certificate.")
+def cli(ctx, server, port, tls, tls_verify):
     ctx.ensure_object(dict)
-    ctx.obj["api"] = Api(hostname=server, port=port, tls=tls)
+    ctx.obj["api"] = Api(hostname=server, port=port, tls=tls, verify=tls_verify)
 
 
 @click.command()
@@ -182,7 +183,9 @@ def retrieve(ctx, username, password, output):
 
 @click.command("adduser")
 @click.argument("username")
-@click.option("--admin-password", prompt="Enter admin password", hide_input=True, required=True)
+@click.option(
+    "--admin-password", prompt="Enter admin password", hide_input=True, required=True
+)
 @click.pass_context
 def add_user(ctx, username, admin_password):
     api: Api = ctx.obj["api"]

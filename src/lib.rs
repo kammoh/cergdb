@@ -16,7 +16,7 @@ static KEYS: Lazy<models::auth::Keys> = Lazy::new(|| {
     models::auth::Keys::new(secret.as_bytes())
 });
 
-static MIGRATOR: Migrator = sqlx::migrate!(); // defaults to "./migrations"
+pub static MIGRATOR: Migrator = sqlx::migrate!(); // defaults to "./migrations"
 
 pub struct AppState {
     pub pool: sqlx::PgPool,

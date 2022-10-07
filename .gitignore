@@ -1,2 +1,8 @@
+.vscode/
+certs/
 /target
 .env
+SECRET
+PASSWORD
+.DS_Store
+Cargo.lock

@@ -1,4 +1,5 @@
 pub mod auth;
 pub mod info;
-pub mod results;
+pub mod submit;
+pub mod retrieve;
 pub mod users;
