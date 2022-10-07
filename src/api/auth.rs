@@ -36,14 +36,14 @@ pub async fn find_user(pool: &PgPool, user_id: &str) -> Result<User, AppError> {
 }
 
 pub async fn insert_new_user(
-    app_state: &AppState,
+    state: &AppState,
     transaction: &mut Transaction<'_, Postgres>,
     new_user: &User,
 ) -> Result<String, AppError> {
     let mut hasher = argonautica::Hasher::default();
     let password_hash = hasher
         .with_password(&new_user.password)
-        .with_secret_key(app_state.secret.expose_secret())
+        .with_secret_key(state.secret.expose_secret())
         .hash()
         .expect("failed to hash the password");
 
@@ -88,6 +88,8 @@ pub async fn login(
         .with_password(&credentials.password)
         .with_hash(&user.password)
         .verify();
+
+    log::info!("[login] verified: {verified:?}");
 
     if verified.unwrap_or(false) {
         let claims = Claims {
