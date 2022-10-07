@@ -103,7 +103,7 @@ pub async fn submit(
 
     Ok(axum::Json(json!({
         // "id": record.id,
-        "submitter": claims.user.email,
+        "submitter": claims.username,
     })))
 }
 
@@ -119,7 +119,7 @@ pub async fn retrieve(
     Extension(state): Extension<Arc<AppState>>,
     claims: Claims,
 ) -> Result<axum::Json<serde_json::Value>, AppError> {
-    log::info!("get_results user:{} query: {:?}", claims.user.email, query);
+    log::info!("get_results user:{} query: {:?}", claims.username, query);
 
     // let filter = query.filter.map_or(String::new(), |s| {
     //     // FIXME FIXME securely verify filter, exploitable serious security flaw!!!

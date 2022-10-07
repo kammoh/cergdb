@@ -94,7 +94,8 @@ pub async fn login(
 
     if verified {
         let claims = Claims {
-            user,
+            username: user.email,
+            is_admin: user.is_admin,
             exp: get_timestamp_8_hours_from_now(),
         };
         let token = encode(&Header::default(), &claims, &KEYS.encoding)
@@ -111,10 +112,10 @@ pub async fn register(
     Extension(state): Extension<Arc<AppState>>,
     claims: Claims,
 ) -> Result<Json<Value>, AppError> {
-    if !claims.user.is_admin {
+    if !claims.is_admin {
         return Err(AppError::AuthenticationError(format!(
             "User {} does not have admin privileges",
-            claims.user.email
+            claims.username
         )));
     }
 

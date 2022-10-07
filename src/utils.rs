@@ -30,9 +30,9 @@ where
         let TypedHeader(Authorization(bearer)) =
             TypedHeader::<Authorization<Bearer>>::from_request(req)
                 .await
-                .map_err(|_| AppError::InvalidToken)?;
+                .map_err(|e| AppError::TokenError(format!("{e}")))?;
         let data = decode::<Claims>(bearer.token(), &KEYS.decoding, &Validation::default())
-            .map_err(|_| AppError::InvalidToken)?;
+            .map_err(|e| AppError::TokenError(format!("{e}")))?;
         Ok(data.claims)
     }
 }

@@ -3,7 +3,6 @@ use serde_json::json;
 
 #[derive(Debug)]
 pub enum AppError {
-    InvalidToken,
     WrongCredential,
     MissingCredential,
     TokenCreation,
@@ -13,6 +12,7 @@ pub enum AppError {
     ResultsAlreadyExits,
     ResultsNotFound,
     AuthenticationError(String),
+    TokenError(String),
     SqlxError(sqlx::Error),
 }
 
@@ -29,7 +29,6 @@ impl IntoResponse for AppError {
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "an internal server error occurred".into(),
             ),
-            Self::InvalidToken => (StatusCode::BAD_REQUEST, "invalid token".into()),
             Self::MissingCredential => (StatusCode::BAD_REQUEST, "missing credential".into()),
             Self::TokenCreation => (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -40,6 +39,10 @@ impl IntoResponse for AppError {
             Self::AuthenticationError(msg) => (
                 StatusCode::UNAUTHORIZED,
                 format!("Authentication error: {msg}"),
+            ),
+            Self::TokenError(msg) => (
+                StatusCode::BAD_REQUEST,
+                format!("Error in authentication token: {msg}"),
             ),
             Self::UserAlreadyExits => (StatusCode::BAD_REQUEST, "User already exists".into()),
             Self::ResultsNotFound => (StatusCode::BAD_REQUEST, "Results not found".into()),
