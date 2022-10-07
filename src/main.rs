@@ -52,20 +52,23 @@ async fn main() {
         .expect("unable to connect to database");
 
     let secret = Secret::from(
-        fs::read_to_string(root_path.join("SECRET")).expect("Could not open SECRET file."),
+        env::var("SECRET").unwrap_or(
+            fs::read_to_string(root_path.join("SECRET")).expect("Could not open SECRET file.")
+        )
     );
 
     // MIGRATOR.run(&pool).await.unwrap();
     let state = Arc::new(AppState { pool, secret });
 
     if find_user(&state.pool, "admin").await.is_err() {
-        
-        let password = fs::read_to_string(root_path.join("PASSWORD")).expect("Could not open PASSWORD file.");
+        let password = env::var("ADMIN_PASSWORD").unwrap_or(
+            fs::read_to_string(root_path.join("PASSWORD")).expect("Could not open PASSWORD file.")
+        );
         log::info!("setting admin password");
         let admin = User {
             email: "admin".to_owned(),
             password: password,
-            name: "admin".to_owned(),
+            name: "Administrator".to_owned(),
             is_admin: true,
         };
         let mut transaction = state.pool.begin().await.unwrap();
