@@ -1,19 +1,27 @@
+#!/usr/bin/env python3
+
 import csv
 from getpass import getpass
 from pathlib import Path
 import sys
-from typing import Dict
+from typing import Dict, Optional
 import json
 
 import click
 import requests
+import urllib
 from attrs import define
+
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)  # type: ignore
 
 
 @define
 class Api:
     hostname: str
     port: int
+    api_root: str = ""
     tls: bool = False
     headers: Dict[str, str] = {}
     verify: bool = False
@@ -25,7 +33,10 @@ class Api:
 
     @property
     def server_url(self) -> str:
-        return f"http{'s' if self.tls else ''}://{self.hostname}:{self.port}/"
+        api_root = self.api_root.strip("/")
+        if api_root:
+            api_root += "/"
+        return f"http{'s' if self.tls else ''}://{self.hostname}:{self.port}/{api_root}"
 
     def login(self, email, password):
         success, resp_json = self.post(
@@ -37,14 +48,14 @@ class Api:
         access_token = resp_json["access_token"]
         self.headers["Authorization"] = "Bearer " + access_token
 
-    def get(self, method, **kwargs):
+    def get(self, method, params=None, **kwargs):
         r = requests.get(
             self.server_url + method,
+            params=params,
             headers=self.headers,
             verify=self.verify,
             **kwargs,
         )
-        print(f"Status Code: {r.status_code}")
         success = True
         if r.status_code != 200:
             success = False
@@ -60,7 +71,6 @@ class Api:
             **kwargs,
             verify=self.verify,
         )
-        print(f"Status Code: {r.status_code}")
         success = True
         if r.status_code != 200:
             success = False
@@ -87,7 +97,7 @@ class Api:
 @click.option("--tls", default=True)
 def cli(ctx, server, port, tls):
     ctx.ensure_object(dict)
-    ctx.obj["api"] = Api(server, port, tls)
+    ctx.obj["api"] = Api(hostname=server, port=port, tls=tls)
 
 
 @click.command()
@@ -126,34 +136,55 @@ def submit(
     if synthesis_results:
         with open(synthesis_results) as f:
             synthesis_results = json.load(f)
-    else:
-        synthesis_results = {}
 
     if timing_results:
         with open(timing_results, encoding="utf-8") as f:
             csv_reader = csv.DictReader(f)
             timing_results = list(csv_reader)
-    else:
-        timing_results = {}
 
     data = {
         "id": submission_id,  # must be unique, no spaces, use lower-case letters, numbers and and under-score,
         "name": submission_name,  #
         "category": submission_category,
         "metadata": metadata,
-        "timing": {"sim": timing_results},
+        "timing": timing_results,
         "synthesis": synthesis_results,
     }
 
     success, r = api.submit(data)
-    
+
     if success:
-        print("user added", r)
+        print("results submitted: ", r)
     else:
         sys.exit(f"operation failed: {r}")
 
+
+@click.command()
+@click.option("--username", prompt="Enter username> ", required=True)
+@click.option("--password", prompt="Enter password> ", hide_input=True, required=True)
+@click.option("--output", type=Path, default="all_data.json")
+@click.pass_context
+def retrieve(ctx, username, password, output):
+    api: Api = ctx.obj["api"]
+
+    api.login(username, password)
+
+    params = {}
+    params = dict(filter="id = 'asco'", limit=10000, offset=0)
+
+    success, r = api.get("retrieve", params=params)
+
+    if success:
+        with open(output, "w") as f:
+            json.dump(r, f)
+        print(f"results written to {output}")
+    else:
+        sys.exit(f"operation failed: {r}")
+
+
 @click.command("adduser")
-@click.option("--username", prompt="Enter new username> ", help="user name")
+@click.option("--username", prompt="Enter username> ", required=True)
+@click.option("--password", prompt="Enter password> ", hide_input=True, required=True)
 @click.pass_context
 def add_user(ctx, username):
     api: Api = ctx.obj["api"]
@@ -164,16 +195,16 @@ def add_user(ctx, username):
     user_pass = getpass(f"Enter password for new user {username}> ")
 
     success, r = api.add_user(username, user_pass)
-    
+
     if success:
         print("user added", r)
     else:
         sys.exit(f"operation failed: {r}")
 
 
-
 cli.add_command(submit)
 cli.add_command(add_user)
+cli.add_command(retrieve)
 
 if __name__ == "__main__":
-    cli(auto_envvar_prefix="CERGDB")
+    cli(auto_envvar_prefix="CERGDB")  # type: ignore

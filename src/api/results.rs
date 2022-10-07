@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use axum::{Extension, Json};
+use axum::{extract::Query, Extension, Json};
+use serde::Deserialize;
 use serde_json::json;
 use sqlx::types::JsonValue;
 use time::OffsetDateTime;
@@ -16,9 +17,6 @@ pub async fn submit(
     Extension(state): Extension<Arc<AppState>>,
     claims: Claims,
 ) -> Result<axum::Json<serde_json::Value>, AppError> {
-    // if the token is verified and data is extracted from the token by the implimentation in utils.rs then only the below code will run
-    log::info!("got results: {:?}", results);
-
     let mut transaction = state.pool.begin().await?;
 
     let existing = sqlx::query!(
@@ -31,21 +29,26 @@ pub async fn submit(
     .fetch_optional(&mut transaction)
     .await?;
 
-    let result = match existing {
+    match existing {
         Some(record) => {
             log::info!("already exists, updating");
 
+            let category = match results.category {
+                None => record.category,
+                _ => results.category,
+            };
+
             let metadata = match results.metadata {
-                JsonValue::Object(ref map) if !map.is_empty() => Some(results.metadata),
-                _ => record.metadata,
+                JsonValue::Null => record.metadata,
+                _ => Some(results.metadata),
             };
             let timing = match results.timing {
-                JsonValue::Object(ref map) if !map.is_empty() => Some(results.timing),
-                _ => record.timing,
+                JsonValue::Null => record.timing,
+                _ => Some(results.timing),
             };
             let synthesis = match results.synthesis {
-                JsonValue::Object(ref map) if !map.is_empty() => Some(results.synthesis),
-                _ => record.synthesis,
+                JsonValue::Null => record.synthesis,
+                _ => Some(results.synthesis),
             };
             sqlx::query!(
                 r#"
@@ -61,8 +64,7 @@ pub async fn submit(
                 results.id,
                 results.name,
                 OffsetDateTime::now_utc(),
-                results.category,
-                // results.metadata
+                category,
                 metadata,
                 timing,
                 synthesis
@@ -103,4 +105,48 @@ pub async fn submit(
         // "id": record.id,
         "submitter": claims.email,
     })))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GetResultsParams {
+    limit: Option<i32>,
+    offset: Option<i32>,
+    filter: Option<String>,
+}
+
+pub async fn retrieve(
+    Query(query): Query<GetResultsParams>,
+    Extension(state): Extension<Arc<AppState>>,
+    claims: Claims,
+) -> Result<axum::Json<serde_json::Value>, AppError> {
+    log::info!("get_results user:{} query: {:?}", claims.email, query);
+
+    // let filter = query.filter.map_or(String::new(), |s| {
+    //     // FIXME FIXME securely verify filter, exploitable serious security flaw!!!
+    //     format!("WHERE {}", s)
+    // });
+
+    let filter = "";
+
+    let rows: Vec<Results> = sqlx::query_as(
+        format!(
+            // r#"
+            // SELECT * from results
+            // {};"#,
+            r#"
+            SELECT * from results
+            {filter}
+            ORDER BY id ASC
+            OFFSET {}
+            LIMIT {}
+            ;"#,
+            query.offset.unwrap_or(0),
+            query.limit.map_or("ALL".to_owned(), |i| i.to_string()),
+        )
+        .as_str(),
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    Ok(axum::Json(json!(rows)))
 }

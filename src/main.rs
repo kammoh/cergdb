@@ -37,7 +37,7 @@ async fn main() {
     // initialize tracing
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG").unwrap_or_else(|_| "cergdb=debug".into()),
+            std::env::var("RUST_LOG").unwrap_or_else(|_| "axum=debug".into()),
         ))
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -81,6 +81,7 @@ async fn main() {
         //only logged-in user can access this route
         .route("/user_profile", get(api::users::user_profile))
         .route("/submit", post(api::results::submit))
+        .route("/retrieve", get(api::results::retrieve))
         .layer(cors)
         .layer(Extension(state));
 

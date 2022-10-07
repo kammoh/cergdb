@@ -26,17 +26,26 @@ impl IntoResponse for AppError {
         let (status, err_msg) = match self {
             Self::InternalServerError => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                "an internal server error occurred",
+                "an internal server error occurred".into(),
             ),
-            Self::InvalidToken => (StatusCode::BAD_REQUEST, "invalid token"),
-            Self::MissingCredential => (StatusCode::BAD_REQUEST, "missing credential"),
-            Self::TokenCreation => (StatusCode::INTERNAL_SERVER_ERROR, "failed to create token"),
-            Self::WrongCredential => (StatusCode::UNAUTHORIZED, "wrong credentials"),
-            Self::UserDoesNotExist => (StatusCode::UNAUTHORIZED, "User does not exist"),
-            Self::UserAlreadyExits => (StatusCode::BAD_REQUEST, "User already exists"),
-            Self::ResultsNotFound => (StatusCode::BAD_REQUEST, "Results not found"),
-            Self::ResultsAlreadyExits => (StatusCode::BAD_REQUEST, "Results already exist. Try update"),
-            Self::SqlxError(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Database error"),
+            Self::InvalidToken => (StatusCode::BAD_REQUEST, "invalid token".into()),
+            Self::MissingCredential => (StatusCode::BAD_REQUEST, "missing credential".into()),
+            Self::TokenCreation => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "failed to create token".into(),
+            ),
+            Self::WrongCredential => (StatusCode::UNAUTHORIZED, "wrong credentials".into()),
+            Self::UserDoesNotExist => (StatusCode::UNAUTHORIZED, "User does not exist".into()),
+            Self::UserAlreadyExits => (StatusCode::BAD_REQUEST, "User already exists".into()),
+            Self::ResultsNotFound => (StatusCode::BAD_REQUEST, "Results not found".into()),
+            Self::ResultsAlreadyExits => (
+                StatusCode::BAD_REQUEST,
+                "Results already exist. Try update".into(),
+            ),
+            Self::SqlxError(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Database error: {e}"),
+            ),
         };
         (status, Json(json!({ "error": err_msg }))).into_response()
     }

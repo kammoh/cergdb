@@ -89,15 +89,13 @@ pub async fn login(
         .with_hash(&user.password)
         .verify();
 
-    log::info!("verified in {verified:?}");
-
     if verified.unwrap_or(false) {
         let claims = Claims {
             email: credentials.email.to_owned(),
             exp: get_timestamp_8_hours_from_now(),
         };
         let token = encode(&Header::default(), &claims, &KEYS.encoding)
-        .map_err(|_| AppError::TokenCreation)?;
+            .map_err(|_| AppError::TokenCreation)?;
         // return bearer token
         Ok(Json(json!({ "access_token": token, "type": "Bearer" })))
     } else {
