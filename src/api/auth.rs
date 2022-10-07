@@ -90,7 +90,7 @@ pub async fn login(
         .verify()
         .map_err(|_| AppError::AuthenticationError(String::from("Could not verify password")))?;
 
-    log::info!("[login] verified: {verified}");
+    log::info!("[login] user: {} verified: {verified}", &credentials.email);
 
     if verified {
         let claims = Claims {
