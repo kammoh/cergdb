@@ -14,7 +14,7 @@ pub struct User {
 
 #[derive(Deserialize, Serialize)]
 pub struct Claims {
-    pub email: String,
+    pub user: User,
     pub exp: u64,
 }
 

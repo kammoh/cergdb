@@ -1,6 +1,6 @@
 pub async fn route_info() -> axum::Json<serde_json::Value> {
     axum::Json(serde_json::json!({
-        "routes": ["/", "/register", "/login", "/user_profile"],
+        "routes": ["/", "/register", "/login", "/user_profile", ""],
         "routes_info": {
             "/" : "this route",
             "/register": "register a user with email and password",

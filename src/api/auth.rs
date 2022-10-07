@@ -94,7 +94,7 @@ pub async fn login(
 
     if verified {
         let claims = Claims {
-            email: credentials.email.to_owned(),
+            user,
             exp: get_timestamp_8_hours_from_now(),
         };
         let token = encode(&Header::default(), &claims, &KEYS.encoding)
@@ -109,7 +109,15 @@ pub async fn login(
 pub async fn register(
     Json(new_user): Json<models::auth::User>,
     Extension(state): Extension<Arc<AppState>>,
+    claims: Claims,
 ) -> Result<Json<Value>, AppError> {
+    if !claims.user.is_admin {
+        return Err(AppError::AuthenticationError(format!(
+            "User {} does not have admin privileges",
+            claims.user.email
+        )));
+    }
+
     // check if email or password is a blank string
     if new_user.email.is_empty() || new_user.password.is_empty() {
         return Err(AppError::MissingCredential);
