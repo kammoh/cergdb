@@ -17,7 +17,7 @@ if ! [ -x "$(command -v sqlx)" ]; then
 fi
 
 until psql -h "${DB_HOST}" -U "${DB_USER}" -p "${DB_PORT}" -d "${DB_USER}" -c '\q'; do
-    >&2 echo "Postgres is still unavailable - sleeping"
+    echo >&2 "Postgres is still unavailable - sleeping"
     sleep 1
 done
 
@@ -26,4 +26,4 @@ sqlx database create
 # sqlx migrate run
 # cargo sqlx prepare --database-url ${DATABASE_URL}
 
->&2 echo "Database is now ready!"
+echo >&2 "Database is now ready!"
