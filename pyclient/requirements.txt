@@ -2,3 +2,4 @@ attrs
 click
 requests
 urllib3
+python-dotenv
