@@ -87,13 +87,18 @@ class Api:
     def submit(self, json):
         return self.post("submit", json=json)
 
+    def delete(self, id):
+        return self.post("delete", json={"id": id})
+
 
 @click.group()
 @click.pass_context
 @click.option("--server", type=str, default="127.0.0.1")
 @click.option("--port", type=int, default=4000)
 @click.option("--tls/--no-tls", default=True)
-@click.option("--tls-verify/--no-tls-verify", default=True, help="Verify TLS certificate.")
+@click.option(
+    "--tls-verify/--no-tls-verify", default=True, help="Verify TLS certificate."
+)
 def cli(ctx, server, port, tls, tls_verify):
     ctx.ensure_object(dict)
     ctx.obj["api"] = Api(hostname=server, port=port, tls=tls, verify=tls_verify)
@@ -168,15 +173,50 @@ def retrieve(ctx, username, password, output):
 
     api.login(username, password)
 
-    params = {}
-    # params = dict(filter="id = 'asco'", limit=10000, offset=0)
+    params = dict(
+        fields=[
+            "id",
+            "timing",
+            "metadata",
+            "synthesis.best.results.design",
+            "synthesis.best.results.tools",
+            "synthesis.best.results.Fmax",
+            "synthesis.best.results._hierarchical_utilization.LWC_SCA_wrapper.@children.INST_LWC.Total LUTs",
+            "synthesis.best.results._hierarchical_utilization.LWC_SCA_wrapper.@children.INST_LWC.FFs",
+            "synthesis.best.results.lut",
+            "synthesis.best.results.ff",
+            "synthesis.best.results.slice",
+            "synthesis.best.results.latch",
+            "synthesis.best.results.dsp",
+            "synthesis.best.results.bram_tile",
+        ],
+        flatten = False,
+    )
 
-    success, r = api.get("retrieve", params=params)
+    success, r = api.post("retrieve", json=params)
 
     if success:
         with open(output, "w") as f:
-            json.dump(r, f)
+            json.dump(r, f, indent=4)
         print(f"results written to {output}")
+    else:
+        sys.exit(f"operation failed: {r}")
+
+
+@click.command()
+@click.option("--username", prompt="Enter username", required=True)
+@click.option("--password", prompt="Enter password", hide_input=True, required=True)
+@click.argument("id")
+@click.pass_context
+def delete(ctx, username, password, id):
+    api: Api = ctx.obj["api"]
+
+    api.login(username, password)
+
+    success, r = api.delete(id)
+
+    if success:
+        print(f"deleted record: {r}")
     else:
         sys.exit(f"operation failed: {r}")
 
@@ -205,6 +245,7 @@ def add_user(ctx, username, admin_password):
 cli.add_command(submit)
 cli.add_command(add_user)
 cli.add_command(retrieve)
+cli.add_command(delete)
 
 if __name__ == "__main__":
     cli(auto_envvar_prefix="CERGDB")  # type: ignore

@@ -1,5 +1,11 @@
 pub mod auth;
 pub mod info;
-pub mod submit;
-pub mod retrieve;
 pub mod users;
+
+mod delete;
+mod retrieve;
+mod submit;
+
+pub use delete::delete;
+pub use retrieve::retrieve;
+pub use submit::submit;

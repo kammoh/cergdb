@@ -7,7 +7,6 @@ use axum::{
     response::Redirect,
     BoxError,
 };
-use axum_server::tls_rustls::RustlsConfig;
 
 #[derive(Clone, Copy)]
 pub struct Ports {

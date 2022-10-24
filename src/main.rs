@@ -84,8 +84,9 @@ async fn main() {
         .route("/register", post(api::auth::register))
         //only logged-in user can access this route
         .route("/user_profile", get(api::users::user_profile))
-        .route("/submit", post(api::submit::submit))
-        .route("/retrieve", get(api::retrieve::retrieve))
+        .route("/submit", post(api::submit))
+        .route("/delete", post(api::delete))
+        .route("/retrieve", post(api::retrieve))
         .layer(cors)
         .layer(Extension(state));
 
