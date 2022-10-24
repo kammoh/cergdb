@@ -4,11 +4,11 @@ use sqlx::types::JsonValue;
 #[derive(Deserialize, Serialize, PartialEq, Debug, sqlx::FromRow)]
 pub struct Results {
     pub id: String,
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    #[sqlx(default)]
-    pub name: String,
-    #[sqlx(default)]
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[sqlx(default)]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[sqlx(default)]
     pub category: Option<String>,
     #[serde(default, skip_serializing_if = "JsonValue::is_null")]
     #[sqlx(default)]

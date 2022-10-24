@@ -40,8 +40,9 @@ async fn main() {
 
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG").unwrap_or_else(|_| "axum=info".into()),
+            std::env::var("RUST_LOG").unwrap_or_else(|_| "cergdb=debug,axum=debug,tower_http=debug".into()),
         ))
+        .with(tracing_subscriber::fmt::layer().pretty())
         .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))
         .init();
 

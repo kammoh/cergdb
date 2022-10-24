@@ -72,6 +72,7 @@ class Api:
             raise Exception(f"authentication failed: {resp_json}")
         access_token = resp_json["access_token"]
         self.headers["Authorization"] = "Bearer " + access_token
+        print(f"Successfully logged in as {username}")
 
     def get(self, method, params=None, **kwargs):
         r = requests.get(
@@ -84,7 +85,7 @@ class Api:
         success = True
         if r.status_code != 200:
             success = False
-            print(f"ERROR [{r.status_code}]: {r}")
+            print(f"GET ERROR [{r.status_code}]: {r}")
         try:
             resp_json = r.json()
         except Exception:
@@ -103,7 +104,7 @@ class Api:
         success = True
         if r.status_code != 200:
             success = False
-            print(f"ERROR [{r.status_code}]: {r}")
+            print(f"POST ERROR [{r.status_code}]: {r}")
         try:
             resp_json = r.json()
         except Exception:
@@ -202,12 +203,14 @@ def submit(
         "synthesis": synthesis_results,
     }
 
+    print(f"in submit data={data}")
+
     success, r = api.submit(data)
 
     if success:
         print("results submitted: ", r)
     else:
-        sys.exit(f"operation failed: {r}")
+        sys.exit(f"Operation failed: {r}")
 
 
 @click.command()

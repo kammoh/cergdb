@@ -1,3 +1,5 @@
+target/
 pyclient/
 *.py
 *.json
+logs/

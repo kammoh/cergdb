@@ -5,6 +5,7 @@ use jsonwebtoken::{encode, Header};
 use secrecy::ExposeSecret;
 use serde_json::{json, Value};
 use sqlx::{PgPool, Postgres, Transaction};
+use tracing::{info, warn};
 
 use crate::{
     error::AppError,
@@ -86,19 +87,21 @@ pub async fn login(
 
     let matches = argon2::verify_encoded(&user.password, &credentials.password.as_bytes()).unwrap();
 
-    log::info!("[login] user: {} matches: {matches}", &credentials.email);
-
+    if matches {}
+    
     if matches {
+        info!("User: {} successfully logged in", &credentials.email);
         let claims = Claims {
             username: user.email,
             is_admin: user.is_admin,
             exp: get_timestamp_8_hours_from_now(),
         };
         let token = encode(&Header::default(), &claims, &KEYS.encoding)
-            .map_err(|_| AppError::TokenCreation)?;
+        .map_err(|_| AppError::TokenCreation)?;
         // return bearer token
         Ok(Json(json!({ "access_token": token, "type": "Bearer" })))
     } else {
+        warn!("Wrong credentials for user: {}", &credentials.email);
         Err(AppError::WrongCredential)
     }
 }
