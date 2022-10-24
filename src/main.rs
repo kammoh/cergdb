@@ -35,7 +35,7 @@ async fn main() {
 
     // initialize tracing
 
-    let file_appender = tracing_appender::rolling::hourly("logs", "cergdb");
+    let file_appender = tracing_appender::rolling::daily("logs", "cergdb");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
 
     tracing_subscriber::registry()

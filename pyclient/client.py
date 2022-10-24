@@ -80,7 +80,11 @@ class Api:
         if r.status_code != 200:
             success = False
             print(f"ERROR [{r.status_code}]: {r}")
-        return success, r.json()
+        try:
+            resp_json = r.json()
+        except requests.exceptions.JSONDecodeError:
+            resp_json = None
+        return success, resp_json
 
     def post(self, method, data=None, json=None, **kwargs):
         r = requests.post(
@@ -95,7 +99,11 @@ class Api:
         if r.status_code != 200:
             success = False
             print(f"ERROR [{r.status_code}]: {r}")
-        return success, r.json()
+        try:
+            resp_json = r.json()
+        except requests.exceptions.JSONDecodeError:
+            resp_json = None
+        return success, resp_json
 
     def get_user_profile(self):
         return self.get("user_profile")
