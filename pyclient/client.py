@@ -4,14 +4,15 @@ import csv
 import json
 import sys
 from getpass import getpass
+from json import JSONDecodeError
 from pathlib import Path
 from typing import Dict, Optional
 
 import click
-from dotenv import load_dotenv
 import requests
 import urllib3
 from attrs import define
+from dotenv import load_dotenv
 
 try:
     import tomllib  # type: ignore # pyright: reportMissingImports=none
@@ -82,15 +83,15 @@ class Api:
             print(f"ERROR [{r.status_code}]: {r}")
         try:
             resp_json = r.json()
-        except requests.exceptions.JSONDecodeError:
+        except JSONDecodeError:
             resp_json = None
         return success, resp_json
 
-    def post(self, method, data=None, json=None, **kwargs):
+    def post(self, method, data=None, json_data=None, **kwargs):
         r = requests.post(
             self.server_url + method,
             data=data,
-            json=json,
+            json=json_data,
             headers=self.headers,
             **kwargs,
             verify=self.verify,
@@ -101,7 +102,7 @@ class Api:
             print(f"ERROR [{r.status_code}]: {r}")
         try:
             resp_json = r.json()
-        except requests.exceptions.JSONDecodeError:
+        except JSONDecodeError:
             resp_json = None
         return success, resp_json
 
