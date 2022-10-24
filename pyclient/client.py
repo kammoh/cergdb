@@ -8,9 +8,12 @@ from pathlib import Path
 from typing import Dict, Optional
 
 import click
+from dotenv import load_dotenv
 import requests
 import urllib3
 from attrs import define
+
+load_dotenv()
 
 
 @define
@@ -21,6 +24,8 @@ class Api:
     tls: bool = False
     headers: Dict[str, str] = {}
     verify: bool = True
+    username: Optional[str] = None
+    password: Optional[str] = None
 
     def __attrs_post_init__(self) -> None:
         self.headers: Dict[str, str] = {
@@ -36,10 +41,21 @@ class Api:
             api_root += "/"
         return f"http{'s' if self.tls else ''}://{self.hostname}:{self.port}/{api_root}"
 
-    def login(self, email, password):
+    def login(self, username=None, password=None):
+        if username is None:
+            username = self.username
+        if password is None:
+            password = self.password
+        if password is None:
+            password = getpass("Enter admin password")
+
+        assert username is not None, "Username is required"
+        assert password is not None, "Password is required"
+
+        print(f"logging in {username}...")
         success, resp_json = self.post(
             "login",
-            json={"email": email, "password": password},
+            json={"email": username, "password": password},
         )
         if not success or not "access_token" in resp_json or "error" in resp_json:
             raise Exception(f"authentication failed: {resp_json}")
@@ -99,38 +115,50 @@ class Api:
 @click.option(
     "--tls-verify/--no-tls-verify", default=True, help="Verify TLS certificate."
 )
-def cli(ctx, server, port, tls, tls_verify):
+@click.option("--username", default=None)
+@click.option("--password", default=None)
+def cli(ctx, server, port, tls, tls_verify, username, password):
     ctx.ensure_object(dict)
-    ctx.obj["api"] = Api(hostname=server, port=port, tls=tls, verify=tls_verify)
+    ctx.obj["api"] = Api(
+        hostname=server,
+        port=port,
+        tls=tls,
+        verify=tls_verify,
+        username=username,
+        password=password,
+    )
 
 
 @click.command()
-@click.option("--username", prompt="Enter username", help="user name")
-@click.option("--password", help="password", default=None)
-@click.option("--submission-id", required=True)
-@click.option("--submission-name", required=True)
+@click.argument(
+    "submission-id",
+)
+@click.option("--submission-name", required=False)
 @click.option("--submission-category", default="HW:LWC:NIST:finalist")
 @click.option("--timing-results", type=Path)
 @click.option("--synthesis-settings", type=Path)
 @click.option("--synthesis-results", type=Path)
+@click.option("--design-toml", default=None, type=Path)
 @click.pass_context
 def submit(
     ctx,
-    username,
-    password,
     submission_id,
     submission_name,
     submission_category,
     timing_results,
     synthesis_settings,
     synthesis_results,
+    design_toml,
 ):
     api: Api = ctx.obj["api"]
-    if not password:
-        password = getpass("Enter admin password")
-    api.login(username, password=password)
+    api.login()
 
     metadata = {}
+
+    if design_toml:
+        with open(design_toml) as f:
+            design_description = json.load(f)
+        metadata["design"] = design_description
 
     if synthesis_settings:
         with open(synthesis_settings) as f:
@@ -164,14 +192,12 @@ def submit(
 
 
 @click.command()
-@click.option("--username", prompt="Enter username", required=True)
-@click.option("--password", prompt="Enter password", hide_input=True, required=True)
 @click.option("--output", type=Path, default="all_data.json")
 @click.pass_context
-def retrieve(ctx, username, password, output):
+def retrieve(ctx, output):
     api: Api = ctx.obj["api"]
 
-    api.login(username, password)
+    api.login()
 
     params = dict(
         fields=[
@@ -190,7 +216,7 @@ def retrieve(ctx, username, password, output):
             "synthesis.best.results.dsp",
             "synthesis.best.results.bram_tile",
         ],
-        flatten = False,
+        flatten=False,
     )
 
     success, r = api.post("retrieve", json=params)
@@ -204,19 +230,17 @@ def retrieve(ctx, username, password, output):
 
 
 @click.command()
-@click.option("--username", prompt="Enter username", required=True)
-@click.option("--password", prompt="Enter password", hide_input=True, required=True)
 @click.argument("id")
 @click.pass_context
-def delete(ctx, username, password, id):
+def delete(ctx, id):
     api: Api = ctx.obj["api"]
 
-    api.login(username, password)
+    api.login()
 
     success, r = api.delete(id)
 
     if success:
-        print(f"deleted record: {r}")
+        print(f"deleted record: {r.get('id')}")
     else:
         sys.exit(f"operation failed: {r}")
 
@@ -230,7 +254,7 @@ def delete(ctx, username, password, id):
 def add_user(ctx, username, admin_password):
     api: Api = ctx.obj["api"]
 
-    api.login(email="admin", password=admin_password)
+    api.login(username="admin", password=admin_password)
 
     user_pass = getpass(f"Enter password for new user {username}: ")
 
