@@ -26,8 +26,6 @@ async fn main() {
         });
     dotenv::from_filename(root_path.join(".env")).ok();
 
-    // pretty_env_logger::init();
-
     let db_user = env::var("DB_USER").unwrap();
     let db_password = env::var("DB_PASSWORD").unwrap_or_default();
     let db_host = env::var("DB_HOST").unwrap();
@@ -36,11 +34,15 @@ async fn main() {
     let db_url = format!("postgres://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}");
 
     // initialize tracing
+
+    let file_appender = tracing_appender::rolling::hourly("logs", "cergdb");
+    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
+
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG").unwrap_or_else(|_| "axum=debug".into()),
+            std::env::var("RUST_LOG").unwrap_or_else(|_| "axum=info".into()),
         ))
-        .with(tracing_subscriber::fmt::layer())
+        .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))
         .init();
 
     let cors = CorsLayer::new().allow_origin(Any);
