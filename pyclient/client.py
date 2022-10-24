@@ -4,7 +4,6 @@ import csv
 import json
 import sys
 from getpass import getpass
-from json import JSONDecodeError
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -64,7 +63,12 @@ class Api:
             "login",
             json={"email": username, "password": password},
         )
-        if not success or not "access_token" in resp_json or "error" in resp_json:
+        if (
+            not success
+            or not resp_json
+            or not "access_token" in resp_json
+            or "error" in resp_json
+        ):
             raise Exception(f"authentication failed: {resp_json}")
         access_token = resp_json["access_token"]
         self.headers["Authorization"] = "Bearer " + access_token
@@ -83,7 +87,7 @@ class Api:
             print(f"ERROR [{r.status_code}]: {r}")
         try:
             resp_json = r.json()
-        except JSONDecodeError:
+        except Exception:
             resp_json = None
         return success, resp_json
 
@@ -102,7 +106,7 @@ class Api:
             print(f"ERROR [{r.status_code}]: {r}")
         try:
             resp_json = r.json()
-        except JSONDecodeError:
+        except Exception:
             resp_json = None
         return success, resp_json
 
