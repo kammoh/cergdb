@@ -13,6 +13,12 @@ import requests
 import urllib3
 from attrs import define
 
+try:
+    import tomllib  # type: ignore # pyright: reportMissingImports=none
+except ModuleNotFoundError:
+    # python_version < "3.11":
+    import tomli as tomllib  # type: ignore
+
 load_dotenv()
 
 
@@ -156,8 +162,8 @@ def submit(
     metadata = {}
 
     if design_toml:
-        with open(design_toml) as f:
-            design_description = json.load(f)
+        with open(design_toml, "rb") as f:
+            design_description = tomllib.load(f)
         metadata["design"] = design_description
 
     if synthesis_settings:
