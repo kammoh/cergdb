@@ -203,8 +203,6 @@ def submit(
         "synthesis": synthesis_results,
     }
 
-    print(f"in submit data={data}")
-
     success, r = api.submit(data)
 
     if success:
