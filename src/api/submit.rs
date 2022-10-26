@@ -17,15 +17,10 @@ pub async fn submit(
     Extension(state): Extension<Arc<AppState>>,
     claims: Claims,
 ) -> Result<axum::Json<serde_json::Value>, AppError> {
+    info!("{} is submitting {}", claims.username, results.id);
     let mut transaction = state.pool.begin().await?;
-
-    info!("{} is submitting", claims.username);
-
     let existing = sqlx::query!(
-        r#"
-        SELECT * from results
-        WHERE id = $1;
-        "#,
+        r#"SELECT * from results WHERE id = $1;"#,
         results.id,
     )
     .fetch_optional(&mut transaction)

@@ -259,8 +259,32 @@ def delete(ctx, id):
 
     success, r = api.delete(id)
 
-    if success:
+    if success and r:
         print(f"deleted record: {r.get('id')}")
+    else:
+        sys.exit(f"operation failed: {r}")
+
+
+@click.command()
+@click.argument("current_id")
+@click.argument("new_id")
+@click.pass_context
+def rename(ctx, current_id, new_id):
+    api: Api = ctx.obj["api"]
+
+    api.login()
+
+    success, r = api.post(
+        "rename",
+        json={
+            "current_id": current_id,
+            "new_id": new_id,
+        },
+    )
+
+    if success and r:
+        assert r.get("success")
+        print(f"Renamed {r.get('old_id')} to {r.get('new_id')}")
     else:
         sys.exit(f"operation failed: {r}")
 
@@ -290,6 +314,7 @@ cli.add_command(submit)
 cli.add_command(add_user)
 cli.add_command(retrieve)
 cli.add_command(delete)
+cli.add_command(rename)
 
 if __name__ == "__main__":
     cli(auto_envvar_prefix="CERGDB")  # type: ignore

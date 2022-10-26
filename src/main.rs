@@ -40,7 +40,8 @@ async fn main() {
 
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG").unwrap_or_else(|_| "cergdb=debug,axum=debug,tower_http=debug".into()),
+            std::env::var("RUST_LOG")
+                .unwrap_or_else(|_| "cergdb=debug,axum=debug,tower_http=debug".into()),
         ))
         .with(tracing_subscriber::fmt::layer().pretty())
         .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))
@@ -90,6 +91,7 @@ async fn main() {
         .route("/submit", post(api::submit))
         .route("/delete", post(api::delete))
         .route("/retrieve", post(api::retrieve))
+        .route("/rename", post(api::rename))
         .layer(cors)
         .layer(Extension(state));
 

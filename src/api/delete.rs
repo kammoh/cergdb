@@ -35,6 +35,6 @@ pub async fn delete(
                 "user": claims.username,
             })))
         }
-        None => Err(AppError::ResultsNotFound(request.id)),
+        None => Err(AppError::IdNotFound(request.id)),
     }
 }

@@ -10,8 +10,8 @@ pub enum AppError {
     InvalidQuery,
     UserDoesNotExist,
     UserAlreadyExits,
-    ResultsAlreadyExits,
-    ResultsNotFound(String),
+    IdNotFound(String),
+    IdExists(String),
     AuthenticationError(String),
     TokenError(String),
     SqlxError(sqlx::Error),
@@ -47,14 +47,8 @@ impl IntoResponse for AppError {
             ),
             Self::UserAlreadyExits => (StatusCode::BAD_REQUEST, "User already exists".into()),
             Self::InvalidQuery => (StatusCode::BAD_REQUEST, "Invalid query".into()),
-            Self::ResultsNotFound(id) => (
-                StatusCode::BAD_REQUEST,
-                format!("No results with id={id} were found."),
-            ),
-            Self::ResultsAlreadyExits => (
-                StatusCode::BAD_REQUEST,
-                "Results already exist. Try update".into(),
-            ),
+            Self::IdExists(id) => (StatusCode::BAD_REQUEST, format!("ID: {id} already exist.")),
+            Self::IdNotFound(id) => (StatusCode::BAD_REQUEST, format!("ID: {id} was not found.")),
             Self::SqlxError(e) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 format!("Database error: {e}"),
