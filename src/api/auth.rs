@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::{Extension, Json};
+use axum::{Json, Extension};
 use jsonwebtoken::{encode, Header};
 use secrecy::ExposeSecret;
 use serde_json::{json, Value};
@@ -76,8 +76,8 @@ pub async fn insert_new_user(
 }
 
 pub async fn login(
-    Json(credentials): Json<models::auth::User>,
     Extension(state): Extension<Arc<AppState>>,
+    Json(credentials): Json<models::auth::User>,
 ) -> Result<Json<Value>, AppError> {
     if credentials.email.is_empty() {
         return Err(AppError::MissingCredential);
@@ -107,9 +107,9 @@ pub async fn login(
 }
 
 pub async fn register(
-    Json(new_user): Json<models::auth::User>,
     Extension(state): Extension<Arc<AppState>>,
     claims: Claims,
+    Json(new_user): Json<models::auth::User>,
 ) -> Result<Json<Value>, AppError> {
     if !claims.is_admin {
         return Err(AppError::AuthenticationError(format!(

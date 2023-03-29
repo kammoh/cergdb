@@ -17,9 +17,9 @@ pub struct DeleteRequest {
 }
 
 pub async fn delete(
-    Json(request): Json<DeleteRequest>,
     Extension(state): Extension<Arc<AppState>>,
     claims: Claims,
+    Json(request): Json<DeleteRequest>,
 ) -> Result<axum::Json<serde_json::Value>, AppError> {
     let record: Option<Results> = query_as(r#"DELETE FROM results WHERE id = $1 RETURNING *"#)
         .bind(&request.id)

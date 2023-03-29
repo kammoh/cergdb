@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::{Extension, Json};
+use axum::{Json, Extension};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -13,9 +13,9 @@ pub struct RenameRequest {
 }
 
 pub async fn rename(
-    Json(request): Json<RenameRequest>,
     Extension(state): Extension<Arc<AppState>>,
     claims: Claims,
+    Json(request): Json<RenameRequest>,
 ) -> Result<axum::Json<serde_json::Value>, AppError> {
     let mut transaction = state.pool.begin().await?;
 

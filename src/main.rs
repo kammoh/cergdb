@@ -12,25 +12,48 @@ use cergdb::{
     models::auth::User,
     AppState, MIGRATOR,
 };
+use clap::Parser;
+use miette::IntoDiagnostic;
 use secrecy::Secret;
 use sqlx::postgres::PgPoolOptions;
-use std::{env, fs, path::PathBuf, sync::Arc};
 use tower_http::cors::{Any, CorsLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-#[tokio::main]
-async fn main() {
-    let root_path = env::var("CARGO_MANIFEST_DIR")
-        .map_or(env::current_dir().unwrap_or(PathBuf::from("")), |x| {
-            PathBuf::from(x)
-        });
-    dotenv::from_filename(root_path.join(".env")).ok();
+use std::{env, fs, path::PathBuf, sync::Arc};
 
-    let db_user = env::var("DB_USER").unwrap();
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    #[arg(long, value_name = "DIR")]
+    config_dir: Option<PathBuf>,
+
+    #[arg(short, long, value_name = "FILE")]
+    config: Option<PathBuf>,
+
+    #[arg(short, long, value_name = "FILE")]
+    secret: Option<PathBuf>,
+
+    #[arg(short, long, value_name = "FILE")]
+    password: Option<PathBuf>,
+}
+
+#[tokio::main]
+async fn main() -> miette::Result<()> {
+    let args = Args::parse();
+
+    let root_path = args.config_dir.unwrap_or(
+        env::var("CARGO_MANIFEST_DIR")
+            .map_or(env::current_dir().unwrap_or(PathBuf::from("")), |x| {
+                PathBuf::from(x)
+            }),
+    );
+    dotenv::from_filename(args.config.unwrap_or(root_path.join(".env"))).ok();
+
+    let db_user = env::var("DB_USER").into_diagnostic()?;
     let db_password = env::var("DB_PASSWORD").unwrap_or_default();
-    let db_host = env::var("DB_HOST").unwrap();
-    let db_port = env::var("DB_PORT").unwrap();
-    let db_name = env::var("DB_NAME").unwrap();
+    let db_host = env::var("DB_HOST").into_diagnostic()?;
+    let db_port = env::var("DB_PORT").into_diagnostic()?;
+    let db_name = env::var("DB_NAME").into_diagnostic()?;
     let db_url = format!("postgres://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}");
 
     // initialize tracing
@@ -55,17 +78,21 @@ async fn main() {
         .await
         .expect("unable to connect to database");
 
-    let secret = Secret::from(env::var("SECRET").unwrap_or(
-        fs::read_to_string(root_path.join("SECRET")).expect("Could not open SECRET file."),
-    ));
+    let secret = Secret::from(
+        env::var("SECRET").unwrap_or(
+            fs::read_to_string(args.secret.unwrap_or(root_path.join("SECRET")))
+                .expect("Could not open SECRET file."),
+        ),
+    );
 
-    MIGRATOR.run(&pool).await.unwrap();
+    MIGRATOR.run(&pool).await.into_diagnostic()?;
 
     let state = Arc::new(AppState { pool, secret });
 
     if find_user(&state.pool, "admin").await.is_err() {
         let password = env::var("ADMIN_PASSWORD").unwrap_or(
-            fs::read_to_string(root_path.join("PASSWORD")).expect("Could not open PASSWORD file."),
+            fs::read_to_string(args.password.unwrap_or(root_path.join("PASSWORD")))
+                .expect("Could not open PASSWORD file."),
         );
         log::info!("setting admin password");
         let admin = User {
@@ -74,11 +101,11 @@ async fn main() {
             name: "Administrator".to_owned(),
             is_admin: true,
         };
-        let mut transaction = state.pool.begin().await.unwrap();
+        let mut transaction = state.pool.begin().await.into_diagnostic()?;
         let new_user_id = insert_new_user(&state, &mut transaction, &admin)
             .await
-            .unwrap();
-        transaction.commit().await.unwrap();
+            .into_diagnostic()?;
+        transaction.commit().await.into_diagnostic()?;
         assert!(new_user_id == "admin");
     }
 
@@ -98,9 +125,15 @@ async fn main() {
     let ip = env::var("SERVER_IP")
         .unwrap_or("0.0.0.0".to_string())
         .parse()
-        .unwrap();
-    let port = env::var("SERVER_PORT").unwrap().parse().unwrap();
-    let tls = env::var("TLS").unwrap().parse().unwrap();
+        .into_diagnostic()?;
+    let port = env::var("SERVER_PORT")
+        .into_diagnostic()?
+        .parse()
+        .into_diagnostic()?;
+    let tls = env::var("TLS")
+        .into_diagnostic()?
+        .parse()
+        .into_diagnostic()?;
 
     log::info!(
         "Starting server at {}://{}:{}",
@@ -114,20 +147,21 @@ async fn main() {
     // let server = axum::Server::bind(&addr);
     if tls {
         let config = RustlsConfig::from_pem_file(
-            PathBuf::from(env::var("TLS_CERT_PEM").unwrap()),
-            PathBuf::from(env::var("TLS_KEY_PEM").unwrap()),
+            PathBuf::from(env::var("TLS_CERT_PEM").into_diagnostic()?),
+            PathBuf::from(env::var("TLS_KEY_PEM").into_diagnostic()?),
         )
         .await
-        .unwrap();
+        .into_diagnostic()?;
 
         axum_server::bind_rustls(addr, config)
             .serve(app.into_make_service())
             .await
-            .expect("failed to start server");
+            .expect("failed to start TLS server");
     } else {
         axum_server::bind(addr)
             .serve(app.into_make_service())
             .await
             .expect("failed to start server");
     };
+    Ok(())
 }

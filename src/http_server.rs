@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use axum::{
     extract::Host,
-    handler::Handler,
+    handler::HandlerWithoutStateExt,
     http::{StatusCode, Uri},
     response::Redirect,
     BoxError,

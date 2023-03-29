@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::{Extension, Json};
+use axum::{Json, Extension};
 use serde_json::json;
 use sqlx::types::JsonValue;
 use time::OffsetDateTime;
@@ -13,9 +13,9 @@ use crate::{
 };
 
 pub async fn submit(
-    Json(results): Json<Results>,
     Extension(state): Extension<Arc<AppState>>,
     claims: Claims,
+    Json(results): Json<Results>,
 ) -> Result<axum::Json<serde_json::Value>, AppError> {
     info!("{} is submitting {}", claims.username, results.id);
     let mut transaction = state.pool.begin().await?;
