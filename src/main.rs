@@ -35,6 +35,9 @@ struct Args {
 
     #[arg(short, long, value_name = "FILE")]
     password: Option<PathBuf>,
+
+    #[arg(short, long, value_name = "DIR")]
+    logs_dir: Option<PathBuf>,
 }
 
 #[tokio::main]
@@ -58,7 +61,8 @@ async fn main() -> miette::Result<()> {
 
     // initialize tracing
 
-    let file_appender = tracing_appender::rolling::daily("logs", "cergdb");
+    let file_appender =
+        tracing_appender::rolling::daily(args.logs_dir.unwrap_or(root_path.join("logs")), "cergdb");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
 
     tracing_subscriber::registry()
