@@ -50,7 +50,7 @@ pub async fn rename(
 
     Ok(axum::Json(json!({
         "success": true,
-        "old_id": request.new_id,
+        "old_id": request.current_id,
         "new_id" : request.new_id,
         "submitter": claims.username,
     })))
