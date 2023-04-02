@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::{Json, Extension};
+use axum::{extract::State, Json};
 use serde_json::json;
 use sqlx::types::JsonValue;
 use time::OffsetDateTime;
@@ -13,7 +13,7 @@ use crate::{
 };
 
 pub async fn submit(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     claims: Claims,
     Json(results): Json<Results>,
 ) -> Result<axum::Json<serde_json::Value>, AppError> {

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::{Extension, Json};
+use axum::{extract::State, Json};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::query_as;
@@ -17,7 +17,7 @@ pub struct DeleteRequest {
 }
 
 pub async fn delete(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     claims: Claims,
     Json(request): Json<DeleteRequest>,
 ) -> Result<axum::Json<serde_json::Value>, AppError> {

@@ -12,7 +12,7 @@ serde_json = "1.0.68"
 tokio = { version = "1.0", features = ["full"] }
 tracing = { version = "0.1", features = ["log"] }
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
-tower-http = { version = "0.4.0", features = ["cors"] }
+tower-http = { version = "0.4.0", features = ["cors", "trace", "add-extension"] }
 sqlx = { version = "0.6", features = [
     "runtime-tokio-rustls",
     "postgres",
@@ -41,3 +41,4 @@ indexmap = "1.9.1"
 tracing-appender = "0.2.2"
 miette = { version = "5.6.0", features = ["fancy"] }
 clap = { version = "4.2.0", features = ["derive", "env"] }
+tower = { version = "0.4.13", features = ["util", "timeout"] }

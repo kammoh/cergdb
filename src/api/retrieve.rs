@@ -3,7 +3,7 @@ use std::{
     sync::Arc,
 };
 
-use axum::{Extension, Json};
+use axum::{extract::State, Json};
 use flatten_json_object::Flattener;
 use indexmap::IndexSet;
 use json_dotpath::DotPaths;
@@ -50,7 +50,7 @@ fn get_sub_paths<'a>(field_name: &'a str, fields: &'a Vec<String>) -> Vec<&'a st
 }
 
 pub async fn retrieve(
-    Extension(state): Extension<Arc<AppState>>,
+    State(state): State<Arc<AppState>>,
     claims: Claims,
     Json(query): Json<GetResultsParams>,
 ) -> Result<axum::Json<serde_json::Value>, AppError> {

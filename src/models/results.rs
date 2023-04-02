@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use sqlx::types::JsonValue;
 
-#[derive(Deserialize, Serialize, PartialEq, Debug, sqlx::FromRow)]
+#[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
 pub struct Results {
     pub id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]

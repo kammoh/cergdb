@@ -9,6 +9,7 @@ from typing import Dict, Optional
 
 import click
 import requests
+from http import HTTPStatus
 import urllib3
 from attrs import define
 from dotenv import load_dotenv
@@ -63,12 +64,7 @@ class Api:
             "login",
             json={"email": username, "password": password},
         )
-        if (
-            not success
-            or not resp_json
-            or not "access_token" in resp_json
-            or "error" in resp_json
-        ):
+        if not success or not resp_json or not "access_token" in resp_json or "error" in resp_json:
             raise Exception(f"authentication failed: {resp_json}")
         access_token = resp_json["access_token"]
         self.headers["Authorization"] = "Bearer " + access_token
@@ -85,7 +81,9 @@ class Api:
         success = True
         if r.status_code != 200:
             success = False
-            print(f"GET ERROR [{r.status_code}]: {r}")
+            print(
+                f"GET ERROR [{r.status_code}] ({HTTPStatus(r.status_code).phrase}): {r} "
+            )
         try:
             resp_json = r.json()
         except Exception:
@@ -104,7 +102,9 @@ class Api:
         success = True
         if r.status_code != 200:
             success = False
-            print(f"POST ERROR [{r.status_code}]: {r}")
+            print(
+                f"POST ERROR [{r.status_code}] ({HTTPStatus(r.status_code).phrase}): {r} "
+            )
         try:
             resp_json = r.json()
         except Exception:
@@ -132,9 +132,7 @@ class Api:
 @click.option("--server", type=str, default="127.0.0.1")
 @click.option("--port", type=int, default=4000)
 @click.option("--tls/--no-tls", default=True)
-@click.option(
-    "--tls-verify/--no-tls-verify", default=True, help="Verify TLS certificate."
-)
+@click.option("--tls-verify/--no-tls-verify", default=True, help="Verify TLS certificate.")
 @click.option("--username", default=None)
 @click.option("--password", default=None)
 def cli(ctx, server, port, tls, tls_verify, username, password):
@@ -291,9 +289,7 @@ def rename(ctx, current_id, new_id):
 
 @click.command("adduser")
 @click.argument("username")
-@click.option(
-    "--admin-password", prompt="Enter admin password", hide_input=True, required=True
-)
+@click.option("--admin-password", prompt="Enter admin password", hide_input=True, required=True)
 @click.pass_context
 def add_user(ctx, username, admin_password):
     api: Api = ctx.obj["api"]

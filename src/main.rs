@@ -1,14 +1,11 @@
 use axum::{
-    extract::Extension,
+    error_handling::HandleErrorLayer,
     routing::{get, post},
-    Router,
+    Router, http::StatusCode, extract::DefaultBodyLimit,
 };
 use axum_server::tls_rustls::RustlsConfig;
 use cergdb::{
-    api::{
-        self,
-        auth::{find_user, insert_new_user},
-    },
+    api::{self, admin::insert_new_user, users::find_user},
     models::auth::User,
     AppState, MIGRATOR,
 };
@@ -16,10 +13,11 @@ use clap::Parser;
 use miette::IntoDiagnostic;
 use secrecy::Secret;
 use sqlx::postgres::PgPoolOptions;
-use tower_http::cors::{Any, CorsLayer};
+use tower::{BoxError, ServiceBuilder};
+use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use std::{env, fs, path::PathBuf, sync::Arc};
+use std::{env, fs, path::PathBuf, sync::Arc, time::Duration};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -74,8 +72,6 @@ async fn main() -> miette::Result<()> {
         .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))
         .init();
 
-    let cors = CorsLayer::new().allow_origin(Any);
-
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(&db_url)
@@ -115,16 +111,31 @@ async fn main() -> miette::Result<()> {
 
     let app = Router::new()
         .route("/", get(api::info::route_info))
-        .route("/login", post(api::auth::login))
-        .route("/register", post(api::auth::register))
-        //only logged-in user can access this route
+        .route("/login", post(api::users::login))
+        .route("/register", post(api::admin::register))
         .route("/user_profile", get(api::users::user_profile))
-        .route("/submit", post(api::submit))
+        .route("/submit", post(api::submit::submit))
         .route("/delete", post(api::delete))
         .route("/retrieve", post(api::retrieve))
         .route("/rename", post(api::rename))
-        .layer(cors)
-        .layer(Extension(state));
+        .layer(
+            ServiceBuilder::new()
+                .layer(HandleErrorLayer::new(|error: BoxError| async move {
+                    if error.is::<tower::timeout::error::Elapsed>() {
+                        Ok(StatusCode::REQUEST_TIMEOUT)
+                    } else {
+                        Err((
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            format!("Unhandled internal error: {}", error),
+                        ))
+                    }
+                }))
+                .timeout(Duration::from_secs(10))
+                .layer(TraceLayer::new_for_http())
+                .into_inner(),
+        )
+        .layer(DefaultBodyLimit::disable())
+        .with_state(state);
 
     let ip = env::var("SERVER_IP")
         .unwrap_or("0.0.0.0".to_string())

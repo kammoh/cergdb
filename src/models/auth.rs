@@ -21,7 +21,7 @@ pub struct User {
     pub is_admin: bool,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Claims {
     pub username: String,
     pub is_admin: bool,

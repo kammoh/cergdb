@@ -1,13 +1,12 @@
-pub mod auth;
+pub mod admin;
 pub mod info;
 pub mod users;
+pub mod submit;
+pub mod delete;
+pub mod rename;
+pub mod retrieve;
 
-mod delete;
-mod rename;
-mod retrieve;
-mod submit;
 
 pub use delete::delete;
 pub use rename::rename;
 pub use retrieve::retrieve;
-pub use submit::submit;
